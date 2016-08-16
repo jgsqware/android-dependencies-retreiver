@@ -1,0 +1,36 @@
+import groovy.json.JsonOutput 
+import org.gradle.api.internal.project.DefaultProject
+
+def androidDeps = new Expando(projects: [])
+
+project(":") {
+    afterEvaluate { root ->
+        root.subprojects.each { project ->
+            project.getProjectEvaluator().evaluate(project, project.state);
+            println "evaluating subproject: ${project.path}"
+            
+            if(project.hasProperty("android")){
+                def p = new Expando(dataBinding: false,support:false)
+                p.name = project.path
+                androidDeps.projects.add(p)
+                def android = project.android
+                p.compileSdkVersion = android.compileSdkVersion
+                p.buildToolsVersion = android.buildToolsVersion
+                p.targetSdkVersion = android.defaultConfig.targetSdkVersion.mApiLevel
+                if(android.hasProperty("dataBinding")){
+                    p.dataBinding = android.dataBinding.enabled
+                }
+                project.configurations.each { configuration -> 
+                    def supportDeps = configuration.dependencies.findAll { it.group.equals("com.android.support")}
+                    if(supportDeps.size() > 0){
+                        p.support = true
+                    }
+                }
+            }
+        }
+
+        File file = new File("./android-dependencies.json")
+        file.text = JsonOutput.prettyPrint(JsonOutput.toJson(androidDeps))
+        println "android-dependencies.json created."
+   }
+}

@@ -1,0 +1,22 @@
+import static groovy.io.FileVisitResult.*
+import static groovy.io.FileType.*
+
+def skipDirs = ~/^(\..*|src|libs|gradle)/
+
+def preDir = {
+    if (skipDirs.matcher(it.name).matches()) {
+        return SKIP_SUBTREE
+    }
+}
+
+def getProjectName(String dir) {
+    return dir.minus(rootDir.toString() + "/").replaceAll("/", ":")
+}
+
+rootDir.traverse(type: DIRECTORIES,preDir: preDir) { dir ->
+    def dstr = dir.toString()
+    if (new File(dstr + "/build.gradle").exists()) {
+        include getProjectName(dstr)
+    }
+}
+
