@@ -23,6 +23,21 @@ gradle
 
 ```json
 {
+    "android_dependencies": {
+        "compileSdkVersions": [
+            "android-22",
+            "android-21"
+        ],
+        "buildToolsVersions": [
+            "23.0.2",
+            "21.0.2"
+        ],
+        "targetSdkVersions": [
+            21
+        ],
+        "dataBinding": true,
+        "support": true
+    },
     "projects": [
         {
             "dataBinding": true,
@@ -30,7 +45,7 @@ gradle
             "name": ":Gradle-Hello-World",
             "compileSdkVersion": "android-22",
             "buildToolsVersion": "23.0.2",
-            "targetSdkVersion": 22
+            "targetSdkVersion": null
         },
         {
             "dataBinding": false,
