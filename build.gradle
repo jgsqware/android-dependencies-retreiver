@@ -1,10 +1,19 @@
 import groovy.json.JsonOutput 
-import org.gradle.api.internal.project.DefaultProject
-
-def androidDeps = new Expando(projects: [])
 
 project(":") {
     afterEvaluate { root ->
+
+        def androidDeps = new Expando(
+            android_dependencies: new Expando(
+                compileSdkVersions: [],
+                buildToolsVersions: [],
+                targetSdkVersions: [],
+                dataBinding: false,
+                support: false
+            ),
+            projects: []
+            )
+
         root.subprojects.each { project ->
             project.getProjectEvaluator().evaluate(project, project.state);
             println "evaluating subproject: ${project.path}"
@@ -14,9 +23,9 @@ project(":") {
                 p.name = project.path
                 androidDeps.projects.add(p)
                 def android = project.android
-                p.compileSdkVersion = android.compileSdkVersion
-                p.buildToolsVersion = android.buildToolsVersion
-                p.targetSdkVersion = android.defaultConfig.targetSdkVersion.mApiLevel
+                p.compileSdkVersion = android?.compileSdkVersion
+                p.buildToolsVersion = android?.buildToolsVersion
+                p.targetSdkVersion = android.defaultConfig?.targetSdkVersion?.mApiLevel
                 if(android.hasProperty("dataBinding")){
                     p.dataBinding = android.dataBinding.enabled
                 }
@@ -26,11 +35,25 @@ project(":") {
                         p.support = true
                     }
                 }
+                addProjectDepsToGeneral(androidDeps,p)
             }
         }
-
-        File file = new File("./android-dependencies.json")
-        file.text = JsonOutput.prettyPrint(JsonOutput.toJson(androidDeps))
+        new File("./android-dependencies.json").text = JsonOutput.prettyPrint(JsonOutput.toJson(androidDeps))
         println "android-dependencies.json created."
    }
 }
+
+def addProjectDepsToGeneral(androidDeps,p){
+    if(p.compileSdkVersion && !(p.compileSdkVersion in androidDeps.android_dependencies.compileSdkVersions)){
+        androidDeps.android_dependencies.compileSdkVersions.add(p.compileSdkVersion)
+    }
+    if(p.buildToolsVersion && !(p.buildToolsVersion in androidDeps.android_dependencies.buildToolsVersions)){
+        androidDeps.android_dependencies.buildToolsVersions.add(p.buildToolsVersion)
+    }
+    if(p.targetSdkVersion && !(p.targetSdkVersion in androidDeps.android_dependencies.targetSdkVersions)){
+        androidDeps.android_dependencies.targetSdkVersions.add(p.targetSdkVersion)
+    }
+    if( p.dataBinding ) androidDeps.android_dependencies.dataBinding = p.dataBinding
+    if( p.support ) androidDeps.android_dependencies.support = p.support
+}
+
